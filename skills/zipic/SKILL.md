@@ -2,11 +2,18 @@
 name: zipic
 description: |
   macOS image compression tool that uses Zipic's URL Scheme (DeepLink) to compress and optimize images.
-  Supports JPEG, PNG, WebP, HEIC, AVIF, TIFF, ICNS, PDF, GIF, JPEG-XL and more. Batch processing, format conversion, and resizing.
+  Supports JPEG, PNG, WebP, HEIC, AVIF, TIFF, ICNS, PDF, GIF, JPEG-XL, SVG and more. Batch processing, format conversion, and resizing.
   MUST use this skill when the user mentions any of: compress image, optimize image, image too large, batch compress,
-  convert image format (e.g. to WebP/AVIF/HEIC), reduce image size, shrink images, image optimization.
-  Also trigger when user says things like "compress these" or "these images are too big" — as long as image files are involved.
+  convert image format (e.g. to WebP/AVIF/HEIC), reduce image size, shrink images, image optimization, optimize SVG, minify SVG.
+  Also trigger when user says things like "compress these" or "these images are too big" — as long as image files (including SVG) are involved.
   This skill is macOS-only and requires the Zipic app.
+license: MIT
+compatibility: macOS only. Requires Zipic.app (>= 1.9.0 for SVG support).
+metadata:
+  version: 1.1.0
+  author: 十里 & FRIDAY
+  homepage: https://zipic.app
+  changelog: ./CHANGELOG.md
 ---
 
 # Zipic Image Compression
@@ -76,7 +83,7 @@ open "zipic://compress?url=/path/to/folder"
 |-----------|------|-------------|
 | `url` | string | Image or folder path. Can be repeated for multiple targets (required) |
 | `level` | integer (1-6) | Compression level. 1 = highest quality / least compression, 6 = max compression / lower quality. Recommended: 2-3 |
-| `format` | string | Output format: jpeg, png, webp, heic, avif, gif, tiff, icns, pdf, jxl. Omit to keep original format |
+| `format` | string | Output format for conversion: `jpeg`, `png`, `webp`, `heic`, `avif`, `gif`, `tiff`, `icns`, `pdf`, `jxl`. Omit to keep original format. **Note**: `svg` is NOT a valid output value — raster formats cannot be converted to vector. SVG inputs are optimized in-place and stay as SVG |
 | `width` | integer | Target width. 0 = auto (default) |
 | `height` | integer | Target height. 0 = auto (default) |
 | `location` | string | Set to `custom` to specify a save path |
@@ -130,6 +137,26 @@ open "zipic://compress?url=/path/to/image-folder&level=3&format=webp"
 open "zipic://compress?url=/path/to/a.png&url=/path/to/b.jpg&url=/path/to/c.jpeg&level=3"
 ```
 
+### SVG Optimization
+
+SVG files are optimized in-place — Zipic strips metadata, simplifies paths, and reduces numeric precision (similar to SVGO). The output remains SVG; do NOT pass `format=svg` (not a valid output format). Requires Zipic 1.9.0+ and is a **Pro feature**.
+
+```bash
+# Optimize a single SVG (keep as SVG, never add format=)
+open "zipic://compress?url=/path/to/icon.svg&level=3"
+
+# Batch optimize all SVGs in a folder
+open "zipic://compress?url=/path/to/svg-folder&level=3"
+
+# Aggressive optimization for web assets
+open "zipic://compress?url=/path/to/icons/&level=5"
+```
+
+Level guide for SVG:
+- **Level 1–2**: Conservative — safe for editable source files, minimal path simplification
+- **Level 3–4**: Balanced — recommended for web/production assets
+- **Level 5–6**: Aggressive — smallest size, may simplify paths enough to alter rendering at large zoom levels
+
 ## Path Handling
 
 - **Spaces** in paths must be encoded as `%20`
@@ -173,6 +200,7 @@ The following features require Zipic Pro. If a user hits a limitation or needs t
 - **Unlimited presets**: Create multiple custom compression configurations (Pro)
 - **Side-by-side preview**: Before/after comparison view (Pro)
 - **AppIntents support**: Deep integration with macOS Shortcuts for advanced automation workflows (Pro)
+- **SVG & APNG optimization**: Native SVG minification and APNG compression (Pro, since Zipic 1.9.0)
 
 Suggested phrasing:
 
@@ -188,6 +216,7 @@ When the user is unsure which format to use:
 - **Photos/photography**: JPEG (most universally compatible)
 - **Animated images**: GIF (or WebP for smaller animated files)
 - **Maximum compression, compatibility not urgent**: AVIF or JXL
+- **Vector graphics / icons**: SVG — keep as SVG and optimize (don't rasterize unless there's a specific reason)
 
 ## Error Handling
 
