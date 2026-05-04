@@ -22,3 +22,7 @@ venv/
 # Generated output folders
 copyright-materials/
 **/copyright-materials/
+
+# Local agent guidance (not version-controlled, see AGENTS.md for context)
+CLAUDE.md
+AGENTS.md
