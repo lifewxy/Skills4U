@@ -5,6 +5,34 @@ All notable changes to the `zipic` skill are documented in this file.
 Format follows [Keep a Changelog](https://keepachangelog.com/).
 Versioning follows [Semantic Versioning](https://semver.org/): `MAJOR.MINOR.PATCH`.
 
+## [2.0.0] — 2026-05-08
+
+### Added
+- Support for the `zipic` CLI shipped in Zipic 1.9.5 (build 60). CLI is now the preferred invocation path because it returns structured JSON (`isError`, per-file `output_bytes` / `saved_pct`, exit codes) — dramatically more useful for AI workflows than the URL Scheme.
+- Inline detection script in SKILL.md that probes OS, Zipic.app path/version, CLI presence, and GUI running state in a single composite command, then routes via a decision table.
+- Version-aware routing logic with bash-native `sort -V` comparison against `1.9.5`.
+- `reference/cli.md` — full CLI spec: subcommands (`compress`, `preset`, `list`), every flag with type/default, JSON response schemas, exit codes, and the `pro_required` error shape (`purchase_url`, `trial_available`, `direction`, `blocked_format`).
+- `reference/url-scheme.md` — full URL Scheme spec moved out of SKILL.md, including the parameter table, path-encoding helpers, and a CLI-vs-URL-Scheme limitations matrix.
+- `description` trigger keywords: `preset`, `compression history`.
+- `reference/resources.md` — official site, docs, AI-friendly index (`zipic.app/llms.txt`), `llms-full.txt`, and a per-section deep-link table covering all 20 docs pages (Start Here / AI / Guides / Reference / Resources) plus the `/zh-cn/` mirror convention. Lets the skill double as a Zipic-usage Q&A system without bloating SKILL.md — a one-line pointer in SKILL.md sends the AI here when the user asks about Zipic itself instead of asking for compression.
+
+### Changed
+- **BREAKING (skill consumer behavior, not a code break):** SKILL.md is now lean (~150 lines). Exhaustive flag tables moved to `reference/` so the AI loads them only when actually constructing a call — keeps the always-loaded context tight.
+- Bumped minimum recommended Zipic version to 1.9.5 for the CLI path. URL Scheme still works on 1.9.0+ as the documented fallback.
+- `compatibility` field updated to: `macOS only. Requires Zipic.app >= 1.9.5 for CLI; >= 1.9.0 for SVG via URL Scheme.`
+- Pro awareness rewritten around the CLI's structured `pro_required` payload (with `purchase_url` and `trial_available`) instead of the prior generic Pro-feature list.
+
+### Notes
+- URL Scheme is retained as a guaranteed fallback for Zipic < 1.9.5 and for environments where the CLI symlink isn't installed.
+- `preset set-default` is declared in the CLI but returns `not_implemented` in 1.9.5 — flagged in `reference/cli.md`.
+
+### Post-2.0.0 follow-ups
+- `scripts/detect.sh` — moved the inline detection block into an executable shell script that emits `key=value` lines including a precomputed `route` (`cli` / `install_cli` / `url_scheme` / `halt_no_app` / `halt_not_macos`). The skill no longer asks the AI to derive routing or run a `sort -V` version compare; both are baked into the script with a portable awk-based version comparator. Verified on macOS 25.4 with Zipic 1.9.5: emits `route=cli` correctly.
+- Expanded `description` triggers to cover Zipic-usage Q&A: pricing, Pro features, activation, free-tier limits, troubleshooting, comparisons (vs ImageOptim/TinyPNG/Squoosh), CLI install, format support, Raycast/Shortcuts integration. The skill now reliably triggers when the user asks *about* Zipic, not only when they hand it images to compress.
+- SKILL.md: 143 → 127 lines (Step 1–3 collapsed into a single `bash scripts/detect.sh` + route table).
+- **CLI-first restructure (after running 5-eval benchmarks across 3 iterations).** Original SKILL.md presented "CLI path (preferred)" and "URL Scheme fallback" as parallel sections, which led agents on multi-parameter tasks (e.g. "convert + resize + custom output dir") to skip detection entirely and fabricate URL Scheme parameters from memory (`saveLocation=` instead of `directory=`). Rewrote SKILL.md so `zipic compress --json` is the unconditional opening recipe; URL Scheme demoted to a "Fallback" subsection only invoked when `route` says so. `scripts/detect.sh` repositioned from "Step 1, always" to "diagnostic when the CLI fails." Effect on the benchmark: with-skill pass rate **80% → 97%** (stddev 36% → 7%), end-to-end time **81s → 69s**. The fix proves the lesson that document tone matters more than directives — making CLI the obvious default beats writing "you must use CLI" in bold.
+- **SKILL.md compaction (iter-4).** Trimmed 131 → 82 lines (-37%). Cut redundant sections: a `pro_required` JSON sample (already fully specified in `reference/cli.md`), a CLI exit-code table that duplicated a one-liner in the Compress section, a "Common workflows" bullet list overlapping the flag table, and a "Format guidance" section the LLM didn't need (WebP/AVIF/HEIC choice is general knowledge). Also condensed the frontmatter `description`. Re-running the same 5-eval benchmark: pass rate held at **97%** while average tokens dropped from 34.7K → 27.1K (-22%). The skill now consumes **fewer tokens than the no-skill baseline** (27.1K vs 27.9K), so loading it is strictly free at the token level — the skill pays for itself on every invocation.
+
 ## [1.1.0] — 2026-04-22
 
 ### Added
