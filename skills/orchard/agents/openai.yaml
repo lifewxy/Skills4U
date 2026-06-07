@@ -1,0 +1,4 @@
+interface:
+  display_name: "Orchard"
+  short_description: "Use Apple apps from the command line"
+  default_prompt: "Use $orchard to read today’s calendar, reminders, mail, and weather."
