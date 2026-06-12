@@ -1,0 +1,4 @@
+interface:
+  display_name: "Chatwoot"
+  short_description: "Call Chatwoot APIs safely from Codex"
+  default_prompt: "Use $chatwoot to inspect recent Chatwoot conversations and summarize customer feedback."
